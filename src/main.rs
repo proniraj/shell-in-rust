@@ -1,16 +1,18 @@
 use std::io::{self, Write};
 
 fn main() -> io::Result<()> {
-    print!("$ ");
-    io::stdout().flush().unwrap();
+    loop {
+        print!("$ ");
+        io::stdout().flush().unwrap();
 
-    let mut command = String::new();
+        let mut command = String::new();
 
-    io::stdin()
-        .read_line(&mut command)
-        .expect("Failed to read line");
+        io::stdin()
+            .read_line(&mut command)
+            .expect("Failed to read line");
 
-    print!("{}: command not found", command.trim());
+        print!("{}: command not found", command.trim());
+    }
 
-    Ok(())
+    // Ok(())
 }
