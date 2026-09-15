@@ -13,6 +13,9 @@ fn main() -> io::Result<()> {
 
         if command.trim() == "exit" {
             break;
+        } else if command.trim() == "echo" {
+            print!("{}\n", command.trim());
+            break;
         }
 
         print!("{}: command not found\n", command.trim());
