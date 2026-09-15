@@ -13,8 +13,8 @@ fn main() -> io::Result<()> {
 
         if command.trim() == "exit" {
             break;
-        } else if command.trim() == "echo" {
-            print!("{}\n", command.trim());
+        } else if command.trim().starts_with("echo") {
+            print!("{}\n", &command.trim()[5..]);
             break;
         }
 
