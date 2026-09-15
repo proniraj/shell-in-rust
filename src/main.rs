@@ -1,11 +1,16 @@
 use std::io::{self, Write};
 
-fn main() -> io::Result<()> {
+// -> io::Result<()>
+fn main() {
     loop {
         print!("$ ");
         io::stdout().flush().unwrap();
 
         let mut command = String::new();
+
+        if command.to_string() == "exit" {
+            break;
+        }
 
         io::stdin()
             .read_line(&mut command)
