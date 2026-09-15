@@ -15,10 +15,9 @@ fn main() -> io::Result<()> {
             break;
         } else if command.trim().starts_with("echo") {
             print!("{}\n", &command.trim()[5..]);
-            break;
+        } else {
+            print!("{}: command not found\n", command.trim());
         }
-
-        print!("{}: command not found\n", command.trim());
     }
 
     Ok(())
