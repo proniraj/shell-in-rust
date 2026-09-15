@@ -11,7 +11,7 @@ fn main() -> io::Result<()> {
             .read_line(&mut command)
             .expect("Failed to read line");
 
-        print!("{}: command not found", command.trim());
+        print!("{}: command not found\n", command.trim());
     }
 
     // Ok(())
