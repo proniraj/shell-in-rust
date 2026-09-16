@@ -3,7 +3,7 @@ use std::fs::{self};
 use std::io::{self, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::process::CommandExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn find_executable(command: &str) -> Option<PathBuf> {
@@ -74,6 +74,27 @@ fn pwd_command() {
         Err(_) => (),
     }
 }
+
+fn cd_command(args: &[&str]) {
+    match args {
+        [] => println!("Please provide directory path"),
+        [directory_path, _res @ ..] => {
+            println!("The directory is: {}", directory_path);
+
+            let path = Path::new(directory_path);
+
+            if !path.is_dir() {
+                println!("cd: no such file or directory: {}", directory_path);
+                return;
+            }
+
+            if env::set_current_dir(&path).is_ok() {
+                println!("switch to new directory: {}", directory_path);
+            }
+        }
+    };
+}
+
 fn main() {
     loop {
         print!("$ ");
@@ -93,6 +114,7 @@ fn main() {
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
             ["type", rest @ ..] => type_command(rest),
             ["pwd"] => pwd_command(),
+            ["cd", rest @ ..] => cd_command(rest),
             external_command => run_external_command(external_command),
         }
     }
