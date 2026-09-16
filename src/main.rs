@@ -6,30 +6,24 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn find_executable(command: &str) -> Option<PathBuf> {
-    match env::var_os("PATH") {
-        Some(env_paths) => {
-            for env_path in env::split_paths(&env_paths) {
-                let joined_path = env_path.as_path().join(command);
-                let path = joined_path.to_str().unwrap();
+    let env_paths = env::var_os("PATH")?;
 
-                match fs::symlink_metadata(path) {
-                    Ok(metadata) => {
-                        if metadata.is_dir() {
-                            continue;
-                        }
+    for env_path in env::split_paths(&env_paths) {
+        let candidate = env_path.join(command);
 
-                        let permissions_mode = metadata.permissions().mode();
-                        let can_execute = permissions_mode & 0o111 != 0;
+        let metadata = match fs::symlink_metadata(&candidate) {
+            Ok(metadata) => metadata,
+            Err(_) => continue,
+        };
 
-                        if can_execute {
-                            return Some(joined_path);
-                        }
-                    }
-                    _ => (),
-                }
-            }
+        if !metadata.is_file() {
+            continue;
         }
-        None => return None,
+
+        let permissions_mode = metadata.permissions().mode();
+        if permissions_mode & 0o111 != 0 {
+            return Some(candidate);
+        }
     }
 
     None
@@ -71,15 +65,9 @@ fn run_external_command(command_with_args: &[&str]) {
 }
 
 fn pwd_command() {
-    let mut cmd = Command::new("pwd");
-
-    match cmd.output() {
-        Ok(result) => {
-            if result.status.success() {
-                print!("{}", String::from_utf8_lossy(&result.stdout));
-            } else {
-                eprint!("{}", String::from_utf8_lossy(&result.stderr));
-            }
+    match env::current_dir() {
+        Ok(path) => {
+            println!("{}", path.to_str().unwrap());
         }
         Err(_) => (),
     }
