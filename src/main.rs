@@ -99,6 +99,35 @@ fn cd_command(args: &[&str]) {
     };
 }
 
+fn resolve_quote(string: &String) -> Vec<&str> {
+    let mut start_index: Option<usize> = None;
+    let mut last_word_end_index: usize = 0;
+    let mut args: Vec<&str> = Vec::new();
+
+    for (index, character) in string.chars().enumerate() {
+        match character {
+            '\'' => match start_index {
+                None => start_index = Some(index),
+                Some(start) => {
+                    args.push(&string[start + 1..index]);
+                    start_index = None;
+                    last_word_end_index = index + 1;
+                }
+            },
+            ' ' => match start_index {
+                None => {
+                    args.push(&string[last_word_end_index..index]);
+                    last_word_end_index = index + 1;
+                }
+                _ => (),
+            },
+            _ => (),
+        }
+    }
+
+    args
+}
+
 fn main() {
     loop {
         print!("$ ");
@@ -110,7 +139,7 @@ fn main() {
             .read_line(&mut user_input)
             .expect("Failed to read line");
 
-        let full_command: Vec<&str> = user_input.split_whitespace().collect();
+        let full_command = resolve_quote(&user_input);
 
         match full_command.as_slice() {
             [] => continue,
