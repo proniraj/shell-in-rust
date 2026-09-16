@@ -45,7 +45,6 @@ fn run_external_command(command_with_args: &[&str]) {
             Some(path) => {
                 let mut cmd = Command::new(path);
 
-                cmd.arg(command);
                 cmd.args(args);
 
                 match cmd.output() {
