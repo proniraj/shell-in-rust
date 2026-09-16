@@ -128,6 +128,8 @@ fn resolve_quote(string: &String) -> Vec<&str> {
         }
     }
 
+    println!("Total number of args: {}", args.len());
+
     args
 }
 
