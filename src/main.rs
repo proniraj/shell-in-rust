@@ -115,8 +115,8 @@ fn resolve_quote(string: &String) -> Vec<&str> {
                     }
                 }
                 Some(start) => {
-                    if start + 1 != index {
-                        args.push(&string[start + 1..index])
+                    if start != index - 1 {
+                        args.push(&string[start + 1..index]);
                     }
                     start_index = None;
                     last_word_end_index = index + 1;
