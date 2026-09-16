@@ -114,9 +114,12 @@ fn resolve_quote(string: &String) -> Vec<&str> {
                     last_word_end_index = index + 1;
                 }
             },
-            ' ' => match start_index {
+            ' ' | '\n' => match start_index {
                 None => {
-                    args.push(&string[last_word_end_index..index]);
+                    if last_word_end_index != index {
+                        args.push(&string[last_word_end_index..index]);
+                    }
+
                     last_word_end_index = index + 1;
                 }
                 _ => (),
