@@ -164,6 +164,11 @@ fn command_tokenizer() -> Vec<String> {
                             }
                         }
                         State::Inside => {
+                            if is_escaping && quote == Quote::Double && char == '"' {
+                                current_argument.push('"');
+                                is_escaping = false;
+                                continue;
+                            }
                             // opposite quote
                             if ((char == '\'') && quote == Quote::Double)
                                 || (char == '"' && quote == Quote::Single)
@@ -198,8 +203,15 @@ fn command_tokenizer() -> Vec<String> {
                         }
                     }
                     State::Inside => {
-                        is_escaping = false;
-                        current_argument.push('\\');
+                        if !is_escaping && quote == Quote::Double {
+                            is_escaping = true;
+                            continue;
+                        }
+
+                        if is_escaping {
+                            current_argument.push('\\');
+                            is_escaping = false;
+                        }
                     }
                 },
                 any_other_char => {
