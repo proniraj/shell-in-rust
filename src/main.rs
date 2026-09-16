@@ -48,8 +48,8 @@ fn type_command(arguments: &[&str]) {
 fn run_external_command(command_with_args: &[&str]) {
     match command_with_args {
         [command, args @ ..] => match find_executable(command) {
-            Some(_) => {
-                let mut cmd = Command::new(command);
+            Some(path) => {
+                let mut cmd = Command::new(path);
 
                 cmd.args(args);
 
