@@ -114,6 +114,7 @@ enum Quote {
 fn command_tokenizer() -> Vec<String> {
     let mut state: State = State::Outside;
     let mut quote: Quote = Quote::Single;
+    let mut is_escaping: bool = false;
 
     let mut args: Vec<String> = Vec::new();
     let mut current_argument: String = String::new();
@@ -149,6 +150,11 @@ fn command_tokenizer() -> Vec<String> {
                 char @ ('\'' | '"') => {
                     match state {
                         State::Outside => {
+                            if is_escaping {
+                                current_argument.push(char);
+                                is_escaping = false;
+                                continue;
+                            }
                             state = State::Inside;
                             quote = match char {
                                 '\'' => Quote::Single,
@@ -181,6 +187,17 @@ fn command_tokenizer() -> Vec<String> {
                         }
                     }
                 }
+                '\\' => match state {
+                    State::Outside => {
+                        if is_escaping {
+                            current_argument.push('\\');
+                            is_escaping = false;
+                        } else {
+                            is_escaping = true;
+                        }
+                    }
+                    _ => (),
+                },
                 any_other_char => current_argument.push(any_other_char),
             }
         }
