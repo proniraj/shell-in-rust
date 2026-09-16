@@ -146,10 +146,10 @@ fn command_tokenizer() -> Vec<String> {
                         state = State::Outside;
                     }
                 },
-                ' ' => {
+                char @ (' ' | '\t') => {
                     match state {
                         State::Inside => {
-                            current_argument.push(' ');
+                            current_argument.push(char);
                         }
                         State::Outside => {
                             // finish the arguments
