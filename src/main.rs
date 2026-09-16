@@ -2,6 +2,7 @@ use std::env;
 use std::fs::{self};
 use std::io::{self, Write};
 use std::os::unix::fs::PermissionsExt;
+use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -45,6 +46,7 @@ fn run_external_command(command_with_args: &[&str]) {
             Some(path) => {
                 let mut cmd = Command::new(&path);
 
+                cmd.arg0(command);
                 cmd.args(args);
 
                 match cmd.output() {
