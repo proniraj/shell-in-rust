@@ -75,20 +75,26 @@ fn pwd_command() {
     }
 }
 
+fn change_directory(path: &Path) {
+    if !path.is_dir() {
+        println!("cd: {}: No such file or directory", path.to_str().unwrap());
+        return;
+    }
+
+    if env::set_current_dir(&path).is_ok() {
+        return;
+    }
+}
+
 fn cd_command(args: &[&str]) {
     match args {
         [] => println!("Please provide directory path"),
         [directory_path, _res @ ..] => {
-            let path = Path::new(directory_path);
-
-            if !path.is_dir() {
-                println!("cd: {}: No such file or directory", directory_path);
-                return;
-            }
-
-            if env::set_current_dir(&path).is_ok() {
-                return;
-            }
+            let resolved_path = match *directory_path {
+                "~" => PathBuf::from(env::var_os("HOME").unwrap()),
+                rest => PathBuf::from(rest),
+            };
+            change_directory(Path::new(&resolved_path))
         }
     };
 }
