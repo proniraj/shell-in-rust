@@ -37,7 +37,7 @@ fn find_executable(command: &str) -> Option<PathBuf> {
 
 fn type_command(arguments: &[&str]) {
     match arguments {
-        [arg @ ("echo" | "exit" | "type")] => println!("{} is a shell builtin", arg),
+        [arg @ ("echo" | "exit" | "type" | "pwd")] => println!("{} is a shell builtin", arg),
         [arg @ ..] => match find_executable(&arg.join(" ")) {
             Some(path) => println!("{} is {}", arg.join(" "), path.to_str().unwrap()),
             None => println!("{}: not found", arg.join(" ")),
@@ -70,6 +70,20 @@ fn run_external_command(command_with_args: &[&str]) {
     }
 }
 
+fn pwd_command() {
+    let mut cmd = Command::new("pwd");
+
+    match cmd.output() {
+        Ok(result) => {
+            if result.status.success() {
+                print!("{}", String::from_utf8_lossy(&result.stdout));
+            } else {
+                eprint!("{}", String::from_utf8_lossy(&result.stderr));
+            }
+        }
+        Err(_) => (),
+    }
+}
 fn main() {
     loop {
         print!("$ ");
@@ -88,6 +102,7 @@ fn main() {
             ["exit"] => std::process::exit(0),
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
             ["type", rest @ ..] => type_command(rest),
+            ["pwd"] => pwd_command(),
             external_command => run_external_command(external_command),
         }
     }
