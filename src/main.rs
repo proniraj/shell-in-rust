@@ -114,6 +114,7 @@ enum Quote {
 fn command_tokenizer() -> Vec<String> {
     let mut state: State = State::Outside;
     let mut quote: Quote = Quote::Single;
+    // backslash \ is used outside of quotes, it acts as an escape character
     let mut is_escaping: bool = false;
 
     let mut args: Vec<String> = Vec::new();
