@@ -180,6 +180,11 @@ fn command_tokenizer() -> Vec<String> {
                             current_argument.push(char);
                         }
                         State::Outside => {
+                            if is_escaping {
+                                current_argument.push(char);
+                                is_escaping = false;
+                                continue;
+                            }
                             // finish the arguments
                             if !current_argument.is_empty() {
                                 args.push(std::mem::take(&mut current_argument));
