@@ -197,7 +197,10 @@ fn command_tokenizer() -> Vec<String> {
                             is_escaping = true;
                         }
                     }
-                    _ => (),
+                    State::Inside => {
+                        is_escaping = false;
+                        current_argument.push('\\');
+                    }
                 },
                 any_other_char => {
                     current_argument.push(any_other_char);
