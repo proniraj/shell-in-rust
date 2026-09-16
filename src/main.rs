@@ -107,9 +107,17 @@ fn resolve_quote(string: &String) -> Vec<&str> {
     for (index, character) in string.chars().enumerate() {
         match character {
             '\'' => match start_index {
-                None => start_index = Some(index),
+                None => {
+                    start_index = Some(index);
+                    if last_word_end_index != index {
+                        args.push(&string[last_word_end_index..index]);
+                        last_word_end_index = index + 1;
+                    }
+                }
                 Some(start) => {
-                    args.push(&string[start + 1..index]);
+                    if start + 1 != index {
+                        args.push(&string[start + 1..index])
+                    }
                     start_index = None;
                     last_word_end_index = index + 1;
                 }
@@ -127,8 +135,6 @@ fn resolve_quote(string: &String) -> Vec<&str> {
             _ => (),
         }
     }
-
-    println!("Total number of args: {}", args.len());
 
     args
 }
