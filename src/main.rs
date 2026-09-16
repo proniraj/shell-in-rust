@@ -87,7 +87,7 @@ fn cd_command(args: &[&str]) {
             }
 
             if env::set_current_dir(&path).is_ok() {
-                println!("switch to new directory: {}", directory_path);
+                return;
             }
         }
     };
