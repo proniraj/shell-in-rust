@@ -79,12 +79,10 @@ fn cd_command(args: &[&str]) {
     match args {
         [] => println!("Please provide directory path"),
         [directory_path, _res @ ..] => {
-            println!("The directory is: {}", directory_path);
-
             let path = Path::new(directory_path);
 
             if !path.is_dir() {
-                println!("cd: no such file or directory: {}", directory_path);
+                println!("cd: {}: No such file or directory", directory_path);
                 return;
             }
 
