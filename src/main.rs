@@ -2,8 +2,9 @@ use std::env;
 use std::fs::{self};
 use std::io::{self, Write};
 use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
 
-fn find_executable(command: &str) -> Option<std::path::PathBuf> {
+fn find_executable(command: &str) -> Option<PathBuf> {
     match env::var_os("PATH") {
         Some(env_paths) => {
             for env_path in env::split_paths(&env_paths) {
@@ -35,7 +36,7 @@ fn find_executable(command: &str) -> Option<std::path::PathBuf> {
 
 fn type_command(arguments: &[&str]) {
     match arguments {
-        [arg @ ("echo" | "exit")] => println!("{} is a shell builtin", arg),
+        [arg @ ("echo" | "exit" | "type")] => println!("{} is a shell builtin", arg),
         [arg @ ..] => match find_executable(&arg.join(" ")) {
             Some(path) => println!("{} is {}", arg.join(" "), path.to_str().unwrap()),
             None => println!("{}: not found", arg.join(" ")),
