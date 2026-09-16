@@ -99,60 +99,87 @@ fn cd_command(args: &[&str]) {
     };
 }
 
-fn resolve_quote(string: &String) -> Vec<&str> {
-    let mut start_index: Option<usize> = None;
-    let mut last_word_end_index: usize = 0;
-    let mut args: Vec<&str> = Vec::new();
+enum State {
+    Inside,
+    Outside,
+}
 
-    for (index, character) in string.chars().enumerate() {
-        match character {
-            '\'' => match start_index {
-                None => {
-                    start_index = Some(index);
-                    if last_word_end_index != index {
-                        args.push(&string[last_word_end_index..index]);
-                        last_word_end_index = index + 1;
-                    }
-                }
-                Some(start) => {
-                    if start != index - 1 {
-                        args.push(&string[start + 1..index]);
-                    }
-                    start_index = None;
-                    last_word_end_index = index + 1;
-                }
-            },
-            ' ' | '\n' => match start_index {
-                None => {
-                    if last_word_end_index != index {
-                        args.push(&string[last_word_end_index..index]);
-                    }
+fn command_tokenizer() -> Vec<String> {
+    let mut state: State = State::Outside;
 
-                    last_word_end_index = index + 1;
+    let mut args: Vec<String> = Vec::new();
+    let mut current_argument: String = String::new();
+
+    let mut user_input = String::new();
+
+    'outer: loop {
+        user_input.clear();
+
+        io::stdin()
+            .read_line(&mut user_input)
+            .expect("Failed to read line");
+
+        for char in user_input.chars() {
+            match char {
+                '\n' => {
+                    match state {
+                        State::Outside => {
+                            // finiish arguments
+                            if !current_argument.is_empty() {
+                                args.push(std::mem::take(&mut current_argument));
+                            }
+                        }
+                        State::Inside => {
+                            // here we continue taking input from user
+                            current_argument.push('\n');
+                            print!("quote>");
+                            io::stdout().flush().expect("Failed to flush stdout");
+                            continue 'outer;
+                        }
+                    }
                 }
-                _ => (),
-            },
-            _ => (),
+                '\'' => match state {
+                    State::Outside => {
+                        state = State::Inside;
+                    }
+                    State::Inside => {
+                        state = State::Outside;
+                    }
+                },
+                ' ' => {
+                    match state {
+                        State::Inside => {
+                            current_argument.push(' ');
+                        }
+                        State::Outside => {
+                            // finish the arguments
+                            if !current_argument.is_empty() {
+                                args.push(std::mem::take(&mut current_argument));
+                            }
+                        }
+                    }
+                }
+                any_other_char => current_argument.push(any_other_char),
+            }
         }
+
+        break;
     }
 
     args
 }
 
 fn main() {
+    let prompt = "$ ";
     loop {
-        print!("$ ");
+        print!("{}", prompt);
         io::stdout().flush().unwrap();
 
-        let mut user_input = String::new();
+        let commands = command_tokenizer();
 
-        io::stdin()
-            .read_line(&mut user_input)
-            .expect("Failed to read line");
+        let refs: Vec<&str> = commands.iter().map(String::as_str).collect();
 
-        let full_command = resolve_quote(&user_input);
-
-        match full_command.as_slice() {
+        match refs.as_slice() {
             [] => continue,
             ["exit"] => std::process::exit(0),
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
