@@ -182,9 +182,10 @@ fn command_tokenizer() -> Vec<String> {
                         }
                         State::Outside => {
                             if is_escaping {
-                                current_argument.push(char);
+                                if char != ' ' {
+                                    current_argument.push(char);
+                                }
                                 is_escaping = false;
-                                continue;
                             }
                             // finish the arguments
                             if !current_argument.is_empty() {
@@ -204,7 +205,12 @@ fn command_tokenizer() -> Vec<String> {
                     }
                     _ => (),
                 },
-                any_other_char => current_argument.push(any_other_char),
+                any_other_char => {
+                    current_argument.push(any_other_char);
+                    if is_escaping {
+                        is_escaping = false;
+                    }
+                }
             }
         }
 
