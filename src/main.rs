@@ -104,8 +104,16 @@ enum State {
     Outside,
 }
 
+#[derive(PartialEq)]
+enum Quote {
+    Single,
+    Double,
+    None,
+}
+
 fn command_tokenizer() -> Vec<String> {
     let mut state: State = State::Outside;
+    let mut quote: Quote = Quote::Single;
 
     let mut args: Vec<String> = Vec::new();
     let mut current_argument: String = String::new();
@@ -138,14 +146,28 @@ fn command_tokenizer() -> Vec<String> {
                         }
                     }
                 }
-                '\'' => match state {
-                    State::Outside => {
-                        state = State::Inside;
+                char @ ('\'' | '"') => {
+                    match state {
+                        State::Outside => {
+                            state = State::Inside;
+                            quote = match char {
+                                '\'' => Quote::Single,
+                                '"' => Quote::Double,
+                                _ => Quote::None,
+                            }
+                        }
+                        State::Inside => {
+                            // opposite quote
+                            if ((char == '\'') && quote == Quote::Double)
+                                || (char == '"' && quote == Quote::Single)
+                            {
+                                current_argument.push(char);
+                            } else {
+                                state = State::Outside;
+                            }
+                        }
                     }
-                    State::Inside => {
-                        state = State::Outside;
-                    }
-                },
+                }
                 char @ (' ' | '\t') => {
                     match state {
                         State::Inside => {
