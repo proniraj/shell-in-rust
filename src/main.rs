@@ -175,25 +175,19 @@ fn command_tokenizer() -> Vec<String> {
                         }
                     }
                 }
-                char @ (' ' | '\t') => {
-                    match state {
-                        State::Inside => {
+                char @ (' ' | '\t') => match state {
+                    State::Inside => {
+                        current_argument.push(char);
+                    }
+                    State::Outside => {
+                        if is_escaping {
                             current_argument.push(char);
-                        }
-                        State::Outside => {
-                            if is_escaping {
-                                if char != ' ' {
-                                    current_argument.push(char);
-                                }
-                                is_escaping = false;
-                            }
-                            // finish the arguments
-                            if !current_argument.is_empty() {
-                                args.push(std::mem::take(&mut current_argument));
-                            }
+                            is_escaping = false;
+                        } else if !current_argument.is_empty() {
+                            args.push(std::mem::take(&mut current_argument));
                         }
                     }
-                }
+                },
                 '\\' => match state {
                     State::Outside => {
                         if is_escaping {
