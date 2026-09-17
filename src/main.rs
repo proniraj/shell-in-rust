@@ -141,10 +141,10 @@ fn command_tokenizer() -> Vec<String> {
                         }
                         State::Inside => {
                             // here we continue taking input from user
-                            // current_argument.push('\n');
-                            // print!("quote>");
-                            // io::stdout().flush().expect("Failed to flush stdout");
-                            // continue 'outer;
+                            current_argument.push('\n');
+                            print!("quote>");
+                            io::stdout().flush().expect("Failed to flush stdout");
+                            continue 'outer;
                         }
                     }
                 }
@@ -164,18 +164,18 @@ fn command_tokenizer() -> Vec<String> {
                             }
                         }
                         State::Inside => {
-                            if is_escaping && quote == Quote::Double && char == '"' {
+                            if is_escaping && quote == Quote::Double {
                                 current_argument.push('"');
                                 is_escaping = false;
-                                // continue;
-                            }
-                            // opposite quote
-                            if ((char == '\'') && quote == Quote::Double)
-                                || (char == '"' && quote == Quote::Single)
-                            {
-                                current_argument.push(char);
                             } else {
-                                state = State::Outside;
+                                // opposite quote
+                                if ((char == '\'') && quote == Quote::Double)
+                                    || (char == '"' && quote == Quote::Single)
+                                {
+                                    current_argument.push(char);
+                                } else {
+                                    state = State::Outside;
+                                }
                             }
                         }
                     }
