@@ -141,10 +141,10 @@ fn command_tokenizer() -> Vec<String> {
                         }
                         State::Inside => {
                             // here we continue taking input from user
-                            current_argument.push('\n');
-                            print!("quote>");
-                            io::stdout().flush().expect("Failed to flush stdout");
-                            continue 'outer;
+                            // current_argument.push('\n');
+                            // print!("quote>");
+                            // io::stdout().flush().expect("Failed to flush stdout");
+                            // continue 'outer;
                         }
                     }
                 }
