@@ -124,8 +124,8 @@ fn run_external_command(command_with_args: &[&str]) {
                             Some(path) => write_file(path, output.stdout.as_slice()).unwrap(),
                             None => {
                                 io::stdout().write_all(&output.stdout).unwrap();
-                                println!("");
-                                io::stdout().flush().unwrap();
+                                // println!("");
+                                // io::stdout().flush().unwrap();
                             }
                         }
 
