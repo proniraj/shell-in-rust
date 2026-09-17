@@ -203,17 +203,13 @@ fn command_tokenizer() -> Vec<String> {
                         }
                     }
                     State::Inside => {
-                        // if !is_escaping && quote == Quote::Double {
                         if !is_escaping {
                             if quote == Quote::Single {
                                 current_argument.push('\\');
                             } else {
                                 is_escaping = true;
-                                continue;
                             }
-                        }
-
-                        if is_escaping {
+                        } else {
                             current_argument.push('\\');
                             is_escaping = false;
                         }
