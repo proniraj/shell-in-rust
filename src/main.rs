@@ -128,6 +128,8 @@ fn run_external_command(command_with_args: &[&str]) {
                         }
 
                         io::stderr().write_all(&output.stderr).unwrap();
+                        println!("");
+                        io::stdout().flush().unwrap();
                     }
                     Err(error) => eprintln!("Error running command: {}", error),
                 }
