@@ -1,6 +1,6 @@
 use std::env;
 use std::fs::{self};
-use std::io::{self, Result, Write};
+use std::io::{self, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
@@ -103,20 +103,31 @@ fn run_external_command(command_with_args: &[&str]) {
             Some(path) => {
                 let mut cmd = Command::new(&path);
 
+                let mut write_to_file: Option<&str> = None;
+
                 cmd.arg0(command);
-                cmd.args(args);
+
+                match args {
+                    [args_and_path @ .., ">" | "1>", stdout_file_path] => {
+                        cmd.args(args_and_path);
+                        write_to_file = Some(*stdout_file_path);
+                    }
+
+                    rest_args => {
+                        cmd.args(rest_args);
+                    }
+                }
 
                 match cmd.output() {
                     Ok(output) => {
-                        // write_file("./stdout.txt", &output.stdout).unwrap();
-                        // io::stdout().write_all(&output.stdout).unwrap();
-                        // io::stderr().write_all(&output.stderr).unwrap();
-
-                        if output.status.success() {
-                            print!("{}", String::from_utf8_lossy(&output.stdout));
-                        } else {
-                            eprint!("{}", String::from_utf8_lossy(&output.stderr));
+                        match write_to_file {
+                            Some(path) => write_file(path, output.stdout.as_slice()).unwrap(),
+                            None => {
+                                io::stdout().write_all(&output.stdout).unwrap();
+                            }
                         }
+
+                        io::stderr().write_all(&output.stderr).unwrap();
                     }
                     Err(error) => eprintln!("Error running command: {}", error),
                 }
