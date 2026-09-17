@@ -167,7 +167,7 @@ fn command_tokenizer() -> Vec<String> {
                             if is_escaping && quote == Quote::Double && char == '"' {
                                 current_argument.push('"');
                                 is_escaping = false;
-                                continue;
+                                // continue;
                             }
                             // opposite quote
                             if ((char == '\'') && quote == Quote::Double)
