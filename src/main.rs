@@ -123,16 +123,22 @@ fn run_external_command(command_with_args: &[&str]) {
                         match write_to_file {
                             Some(path) => write_file(path, output.stdout.as_slice()).unwrap(),
                             None => {
-                                io::stdout().write_all(&output.stdout).unwrap();
-                                // println!("");
-                                // io::stdout().flush().unwrap();
+                                if !output.stdout.is_empty() {
+                                    io::stdout().write_all(&output.stdout).unwrap();
+
+                                    if !output.stdout.ends_with(b"\n") {
+                                        print!("%\n");
+                                    }
+                                }
                             }
                         }
 
                         if !output.stderr.is_empty() {
                             io::stderr().write_all(&output.stderr).unwrap();
-                            println!("");
-                            io::stdout().flush().unwrap();
+
+                            if !output.stderr.ends_with(b"\n") {
+                                print!("%\n");
+                            }
                         }
                     }
                     Err(error) => eprintln!("Error running command: {}", error),
