@@ -203,7 +203,8 @@ fn command_tokenizer() -> Vec<String> {
                         }
                     }
                     State::Inside => {
-                        if !is_escaping && quote == Quote::Double {
+                        // if !is_escaping && quote == Quote::Double {
+                        if !is_escaping {
                             is_escaping = true;
                             continue;
                         }
