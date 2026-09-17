@@ -1,10 +1,67 @@
 use std::env;
 use std::fs::{self};
-use std::io::{self, Write};
+use std::io::{self, Result, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+trait FileContent {
+    fn to_bytes(&self) -> Vec<u8>;
+}
+
+impl FileContent for &str {
+    fn to_bytes(&self) -> Vec<u8> {
+        self.as_bytes().to_vec()
+    }
+}
+
+impl FileContent for String {
+    fn to_bytes(&self) -> Vec<u8> {
+        self.as_bytes().to_vec()
+    }
+}
+
+impl FileContent for &[u8] {
+    fn to_bytes(&self) -> Vec<u8> {
+        self.to_vec()
+    }
+}
+
+impl FileContent for Vec<u8> {
+    fn to_bytes(&self) -> Vec<u8> {
+        self.clone()
+    }
+}
+
+impl FileContent for &[&str] {
+    fn to_bytes(&self) -> Vec<u8> {
+        self.join("\n").into_bytes()
+    }
+}
+
+impl FileContent for &[String] {
+    fn to_bytes(&self) -> Vec<u8> {
+        self.join("\n").into_bytes()
+    }
+}
+
+impl<const N: usize> FileContent for [&str; N] {
+    fn to_bytes(&self) -> Vec<u8> {
+        self.join("\n").into_bytes()
+    }
+}
+
+fn write_file<P, C>(path: P, content: C) -> io::Result<()>
+where
+    P: AsRef<Path>,
+    C: FileContent,
+{
+    let path = path.as_ref();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(path, content.to_bytes())
+}
 
 fn find_executable(command: &str) -> Option<PathBuf> {
     let env_paths = env::var_os("PATH")?;
@@ -50,11 +107,15 @@ fn run_external_command(command_with_args: &[&str]) {
                 cmd.args(args);
 
                 match cmd.output() {
-                    Ok(result) => {
-                        if result.status.success() {
-                            print!("{}", String::from_utf8_lossy(&result.stdout));
+                    Ok(output) => {
+                        // write_file("./stdout.txt", &output.stdout).unwrap();
+                        // io::stdout().write_all(&output.stdout).unwrap();
+                        // io::stderr().write_all(&output.stderr).unwrap();
+
+                        if output.status.success() {
+                            print!("{}", String::from_utf8_lossy(&output.stdout));
                         } else {
-                            eprint!("{}", String::from_utf8_lossy(&result.stderr));
+                            eprint!("{}", String::from_utf8_lossy(&output.stderr));
                         }
                     }
                     Err(error) => eprintln!("Error running command: {}", error),
@@ -227,6 +288,8 @@ fn command_tokenizer() -> Vec<String> {
         break;
     }
 
+    // println!("{:?}", args);
+
     args
 }
 
@@ -243,6 +306,9 @@ fn main() {
         match refs.as_slice() {
             [] => continue,
             ["exit"] => std::process::exit(0),
+            ["echo", some_content @ .., ">" | "1>", file_path] => {
+                write_file(file_path, some_content.join(" ")).unwrap();
+            }
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
             ["type", rest @ ..] => type_command(rest),
             ["pwd"] => pwd_command(),
