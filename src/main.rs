@@ -339,7 +339,7 @@ fn main() {
         match refs.as_slice() {
             [] => continue,
             ["exit"] => std::process::exit(0),
-            ["echo", some_content @ .., ">" | "1>", file_path] => {
+            ["echo", some_content @ .., ">" | "1>" | "2>", file_path] => {
                 write_file(file_path, some_content.join(" ")).unwrap();
             }
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
