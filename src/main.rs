@@ -342,17 +342,15 @@ fn main() {
                 messages @ ..,
                 redirect_operator @ (">" | "1>" | "2>"),
                 file_path,
-            ] => {
-                match *redirect_operator {
-                    "2>" => {
-                        write_file(file_path, [""]).unwrap();
-                    }
-                    _ => {
-                        write_file(file_path, messages.join(" ")).unwrap();
-                    }
+            ] => match *redirect_operator {
+                "2>" => {
+                    write_file(file_path, [""]).unwrap();
+                    println!("{}", messages.join(" "));
                 }
-                println!("{}", messages.join(" "));
-            }
+                _ => {
+                    write_file(file_path, messages.join(" ")).unwrap();
+                }
+            },
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
             ["type", rest @ ..] => type_command(rest),
             ["pwd"] => pwd_command(),
