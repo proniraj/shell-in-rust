@@ -399,10 +399,10 @@ fn main() {
             [
                 "echo",
                 messages @ ..,
-                redirect_operator @ (">" | "1>" | "2>" | ">>" | "1>>"),
+                redirect_operator @ (">" | "1>" | "2>" | ">>" | "1>>" | "2>>"),
                 file_path,
             ] => match *redirect_operator {
-                "2>" => {
+                "2>" | "2>>" => {
                     write_file(file_path, [""], false).unwrap();
                     println!("{}", messages.join(" "));
                 }
