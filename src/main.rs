@@ -121,18 +121,34 @@ fn run_external_command(command_with_args: &[&str]) {
                 let mut cmd = Command::new(&path);
 
                 let mut write_stdout_to_file: Option<&str> = None;
+                let mut append_to_stdout: bool = false;
                 let mut write_stderr_to_file: Option<&str> = None;
+                let mut append_to_stderr: bool = false;
 
                 cmd.arg0(command);
 
                 match args {
-                    [args_and_path @ .., ">" | "1>", stdout_file_path] => {
+                    [
+                        args_and_path @ ..,
+                        ">" | "1>" | ">>" | "1>>",
+                        stdout_file_path,
+                    ] => {
                         cmd.args(args_and_path);
                         write_stdout_to_file = Some(*stdout_file_path);
+
+                        match args_and_path {
+                            [">>" | "1>>"] => append_to_stdout = true,
+                            _ => append_to_stdout = false,
+                        }
                     }
-                    [args_and_path @ .., "2>", stderr_file_path] => {
+                    [args_and_path @ .., "2>" | "2>>", stderr_file_path] => {
                         cmd.args(args_and_path);
                         write_stderr_to_file = Some(*stderr_file_path);
+
+                        match args_and_path {
+                            ["2>>"] => append_to_stderr = true,
+                            _ => append_to_stderr = false,
+                        }
                     }
 
                     rest_args => {
@@ -145,7 +161,8 @@ fn run_external_command(command_with_args: &[&str]) {
                         if !output.stdout.is_empty() {
                             match write_stdout_to_file {
                                 Some(path) => {
-                                    write_file(path, output.stdout.as_slice(), false).unwrap()
+                                    write_file(path, output.stdout.as_slice(), append_to_stdout)
+                                        .unwrap()
                                 }
                                 None => {
                                     io::stdout().write_all(&output.stdout).unwrap();
@@ -160,7 +177,8 @@ fn run_external_command(command_with_args: &[&str]) {
                         if !output.stderr.is_empty() {
                             match write_stderr_to_file {
                                 Some(path) => {
-                                    write_file(path, output.stderr.as_slice(), false).unwrap()
+                                    write_file(path, output.stderr.as_slice(), append_to_stderr)
+                                        .unwrap()
                                 }
                                 None => {
                                     io::stderr().write_all(&output.stderr).unwrap();
@@ -361,15 +379,20 @@ fn main() {
             [
                 "echo",
                 messages @ ..,
-                redirect_operator @ (">" | "1>" | "2>"),
+                redirect_operator @ (">" | "1>" | "2>" | ">>" | "1>>"),
                 file_path,
             ] => match *redirect_operator {
                 "2>" => {
                     write_file(file_path, [""], false).unwrap();
                     println!("{}", messages.join(" "));
                 }
-                _ => {
-                    write_file(file_path, messages.join(" "), false).unwrap();
+                rest_operator => {
+                    let append = match rest_operator {
+                        ">>" | "1>>" => true,
+                        _ => false,
+                    };
+
+                    write_file(file_path, messages.join(" "), append).unwrap();
                 }
             },
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
