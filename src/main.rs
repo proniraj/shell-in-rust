@@ -130,23 +130,27 @@ fn run_external_command(command_with_args: &[&str]) {
                 match args {
                     [
                         args_and_path @ ..,
-                        ">" | "1>" | ">>" | "1>>",
+                        operator @ (">" | "1>" | ">>" | "1>>"),
                         stdout_file_path,
                     ] => {
                         cmd.args(args_and_path);
                         write_stdout_to_file = Some(*stdout_file_path);
 
-                        match args_and_path {
-                            [">>" | "1>>"] => append_to_stdout = true,
+                        match *operator {
+                            ">>" | "1>>" => append_to_stdout = true,
                             _ => append_to_stdout = false,
                         }
                     }
-                    [args_and_path @ .., "2>" | "2>>", stderr_file_path] => {
+                    [
+                        args_and_path @ ..,
+                        operator @ ("2>" | "2>>"),
+                        stderr_file_path,
+                    ] => {
                         cmd.args(args_and_path);
                         write_stderr_to_file = Some(*stderr_file_path);
 
-                        match args_and_path {
-                            ["2>>"] => append_to_stderr = true,
+                        match *operator {
+                            "2>>" => append_to_stderr = true,
                             _ => append_to_stderr = false,
                         }
                     }
