@@ -1,5 +1,5 @@
 use std::env;
-use std::fs::{self};
+use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::process::CommandExt;
@@ -51,16 +51,33 @@ impl<const N: usize> FileContent for [&str; N] {
     }
 }
 
-fn write_file<P, C>(path: P, content: C) -> io::Result<()>
+fn write_file<P, C>(path: P, content: C, append: bool) -> io::Result<()>
 where
     P: AsRef<Path>,
     C: FileContent,
 {
     let path = path.as_ref();
+
+    // Create parent directories if they don't exist
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
     }
-    fs::write(path, content.to_bytes())
+    let mut options = OpenOptions::new();
+    options.create(true).write(true);
+
+    if append {
+        options.append(true);
+    } else {
+        options.truncate(true);
+    }
+
+    // Open file and write bytes
+    let mut file = options.open(path)?;
+    file.write_all(&content.to_bytes())?;
+
+    Ok(())
 }
 
 fn find_executable(command: &str) -> Option<PathBuf> {
@@ -127,7 +144,9 @@ fn run_external_command(command_with_args: &[&str]) {
                     Ok(output) => {
                         if !output.stdout.is_empty() {
                             match write_stdout_to_file {
-                                Some(path) => write_file(path, output.stdout.as_slice()).unwrap(),
+                                Some(path) => {
+                                    write_file(path, output.stdout.as_slice(), false).unwrap()
+                                }
                                 None => {
                                     io::stdout().write_all(&output.stdout).unwrap();
 
@@ -140,7 +159,9 @@ fn run_external_command(command_with_args: &[&str]) {
 
                         if !output.stderr.is_empty() {
                             match write_stderr_to_file {
-                                Some(path) => write_file(path, output.stderr.as_slice()).unwrap(),
+                                Some(path) => {
+                                    write_file(path, output.stderr.as_slice(), false).unwrap()
+                                }
                                 None => {
                                     io::stderr().write_all(&output.stderr).unwrap();
 
@@ -344,11 +365,11 @@ fn main() {
                 file_path,
             ] => match *redirect_operator {
                 "2>" => {
-                    write_file(file_path, [""]).unwrap();
+                    write_file(file_path, [""], false).unwrap();
                     println!("{}", messages.join(" "));
                 }
                 _ => {
-                    write_file(file_path, messages.join(" ")).unwrap();
+                    write_file(file_path, messages.join(" "), false).unwrap();
                 }
             },
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
