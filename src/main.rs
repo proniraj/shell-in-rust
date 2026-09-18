@@ -321,8 +321,6 @@ fn command_tokenizer() -> Vec<String> {
         break;
     }
 
-    // println!("{:?}", args);
-
     args
 }
 
@@ -345,10 +343,15 @@ fn main() {
                 redirect_operator @ (">" | "1>" | "2>"),
                 file_path,
             ] => {
-                write_file(file_path, messages.join(" ")).unwrap();
-                if *redirect_operator == "2>" {
-                    println!("{}", messages.join(" "))
+                match *redirect_operator {
+                    "2>" => {
+                        write_file(file_path, [""]).unwrap();
+                    }
+                    _ => {
+                        write_file(file_path, messages.join(" ")).unwrap();
+                    }
                 }
+                println!("{}", messages.join(" "));
             }
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
             ["type", rest @ ..] => type_command(rest),
