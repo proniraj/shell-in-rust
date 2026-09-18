@@ -152,7 +152,6 @@ fn run_external_command(command_with_args: &[&str]) {
                     ] => {
                         cmd.args(args_and_path);
 
-                        println!("Creating file for path: {}", stdout_file_path);
                         create_file_if_not_exist(*stdout_file_path).unwrap();
 
                         match *operator {
