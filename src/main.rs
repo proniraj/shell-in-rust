@@ -103,14 +103,19 @@ fn run_external_command(command_with_args: &[&str]) {
             Some(path) => {
                 let mut cmd = Command::new(&path);
 
-                let mut write_to_file: Option<&str> = None;
+                let mut write_stdout_to_file: Option<&str> = None;
+                let mut write_stderr_to_file: Option<&str> = None;
 
                 cmd.arg0(command);
 
                 match args {
                     [args_and_path @ .., ">" | "1>", stdout_file_path] => {
                         cmd.args(args_and_path);
-                        write_to_file = Some(*stdout_file_path);
+                        write_stdout_to_file = Some(*stdout_file_path);
+                    }
+                    [args_and_path @ .., "2>", stderr_file_path] => {
+                        cmd.args(args_and_path);
+                        write_stderr_to_file = Some(*stderr_file_path);
                     }
 
                     rest_args => {
@@ -120,10 +125,10 @@ fn run_external_command(command_with_args: &[&str]) {
 
                 match cmd.output() {
                     Ok(output) => {
-                        match write_to_file {
-                            Some(path) => write_file(path, output.stdout.as_slice()).unwrap(),
-                            None => {
-                                if !output.stdout.is_empty() {
+                        if !output.stdout.is_empty() {
+                            match write_stdout_to_file {
+                                Some(path) => write_file(path, output.stdout.as_slice()).unwrap(),
+                                None => {
                                     io::stdout().write_all(&output.stdout).unwrap();
 
                                     if !output.stdout.ends_with(b"\n") {
@@ -134,10 +139,15 @@ fn run_external_command(command_with_args: &[&str]) {
                         }
 
                         if !output.stderr.is_empty() {
-                            io::stderr().write_all(&output.stderr).unwrap();
+                            match write_stderr_to_file {
+                                Some(path) => write_file(path, output.stderr.as_slice()).unwrap(),
+                                None => {
+                                    io::stderr().write_all(&output.stderr).unwrap();
 
-                            if !output.stderr.ends_with(b"\n") {
-                                print!("\n");
+                                    if !output.stderr.ends_with(b"\n") {
+                                        print!("\n");
+                                    }
+                                }
                             }
                         }
                     }
