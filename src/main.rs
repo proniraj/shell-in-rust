@@ -51,6 +51,21 @@ impl<const N: usize> FileContent for [&str; N] {
     }
 }
 
+fn create_file_if_not_exist<P>(path: P) -> io::Result<()>
+where
+    P: AsRef<Path>,
+{
+    let p = path.as_ref();
+
+    // Create parent directories if they don't exist
+    if let Some(parent) = p.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    Ok(())
+}
+
 fn write_file<P, C>(path: P, content: C, append: bool) -> io::Result<()>
 where
     P: AsRef<Path>,
@@ -58,12 +73,8 @@ where
 {
     let path = path.as_ref();
 
-    // Create parent directories if they don't exist
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            fs::create_dir_all(parent)?;
-        }
-    }
+    create_file_if_not_exist(path)?;
+
     let mut options = OpenOptions::new();
     options.create(true).write(true);
 
@@ -130,31 +141,30 @@ fn run_external_command(command_with_args: &[&str]) {
                 match args {
                     [
                         args_and_path @ ..,
-                        operator @ (">" | "1>" | ">>" | "1>>"),
+                        operator @ (">" | "1>" | ">>" | "1>>" | "2>" | "2>>"),
                         stdout_file_path,
                     ] => {
                         cmd.args(args_and_path);
-                        write_stdout_to_file = Some(*stdout_file_path);
+
+                        create_file_if_not_exist(*stdout_file_path).unwrap();
 
                         match *operator {
-                            ">>" | "1>>" => append_to_stdout = true,
-                            _ => append_to_stdout = false,
+                            o @ (">" | "1>" | "1>>") => {
+                                write_stdout_to_file = Some(*stdout_file_path);
+                                if o == "1>>" {
+                                    append_to_stdout = true;
+                                }
+                            }
+                            o @ ("2>" | "2>>") => {
+                                write_stderr_to_file = Some(*stdout_file_path);
+
+                                if o == "2>>" {
+                                    append_to_stderr = true;
+                                }
+                            }
+                            _ => (),
                         }
                     }
-                    [
-                        args_and_path @ ..,
-                        operator @ ("2>" | "2>>"),
-                        stderr_file_path,
-                    ] => {
-                        cmd.args(args_and_path);
-                        write_stderr_to_file = Some(*stderr_file_path);
-
-                        match *operator {
-                            "2>>" => append_to_stderr = true,
-                            _ => append_to_stderr = false,
-                        }
-                    }
-
                     rest_args => {
                         cmd.args(rest_args);
                     }
