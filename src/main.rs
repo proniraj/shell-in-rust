@@ -339,8 +339,16 @@ fn main() {
         match refs.as_slice() {
             [] => continue,
             ["exit"] => std::process::exit(0),
-            ["echo", some_content @ .., ">" | "1>" | "2>", file_path] => {
-                write_file(file_path, some_content.join(" ")).unwrap();
+            [
+                "echo",
+                messages @ ..,
+                redirect_operator @ (">" | "1>" | "2>"),
+                file_path,
+            ] => {
+                write_file(file_path, messages.join(" ")).unwrap();
+                if *redirect_operator == "2>" {
+                    println!("{}", messages.join(" "))
+                }
             }
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
             ["type", rest @ ..] => type_command(rest),
