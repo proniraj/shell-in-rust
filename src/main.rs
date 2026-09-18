@@ -391,8 +391,8 @@ fn main() {
                         ">>" | "1>>" => true,
                         _ => false,
                     };
-
-                    write_file(file_path, messages.join(" "), append).unwrap();
+                    let formatted_message = format!("{}\n", messages.join(" "));
+                    write_file(file_path, formatted_message, append).unwrap();
                 }
             },
             ["echo", rest @ ..] => println!("{}", rest.join(" ")),
