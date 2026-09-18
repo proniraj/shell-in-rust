@@ -155,9 +155,9 @@ fn run_external_command(command_with_args: &[&str]) {
                         create_file_if_not_exist(*stdout_file_path).unwrap();
 
                         match *operator {
-                            o @ (">" | "1>" | "1>>") => {
+                            o @ (">" | "1>" | ">>" | "1>>") => {
                                 write_stdout_to_file = Some(*stdout_file_path);
-                                if o == "1>>" {
+                                if o == "1>>" || o == ">>" {
                                     append_to_stdout = true;
                                 }
                             }
