@@ -1,10 +1,13 @@
 use std::env;
 use std::fs::{self, OpenOptions};
-use std::io::{self, Write};
+use std::io::{self, BufRead, Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::result::Result::Ok;
+
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 trait FileContent {
     fn to_bytes(&self) -> Vec<u8>;
 }
@@ -264,7 +267,81 @@ enum Quote {
     None,
 }
 
-fn command_tokenizer() -> Vec<String> {
+/// RAII guard: enables raw mode on creation, disables it on drop.
+/// This runs even on panic (stack unwinding) or early return —
+/// you just can't forget to clean up.
+struct RawModeGuard;
+
+impl RawModeGuard {
+    fn new() -> io::Result<Self> {
+        enable_raw_mode()?;
+        Ok(RawModeGuard)
+    }
+}
+
+impl Drop for RawModeGuard {
+    fn drop(&mut self) {
+        // Drop can't return Result, so just log if it fails —
+        // don't panic inside a Drop impl.
+        if let Err(e) = disable_raw_mode() {
+            eprintln!("Failed to disable raw mode: {e}");
+        }
+    }
+}
+
+enum InputResult {
+    Submitted,
+    Cancelled,
+}
+
+fn raw_input(user_input: &mut String) -> io::Result<InputResult> {
+    let _guard = RawModeGuard::new()?; // raw mode active for the rest of this fn
+    user_input.clear();
+
+    let mut buffer = [0u8; 1];
+
+    loop {
+        let n = io::stdin().read(&mut buffer)?;
+        if n == 0 {
+            // EOF (e.g. piped input exhausted, terminal detached)
+            return Ok(InputResult::Cancelled);
+        }
+
+        match buffer[0] {
+            3 => return Ok(InputResult::Cancelled),
+            9 => {
+                io::stdout().flush()?;
+                break;
+            }
+            13 => {
+                user_input.push('\n');
+                print!("\r\n");
+                io::stdout().flush()?;
+                break;
+            }
+            127 | 8 => {
+                if user_input.pop().is_some() {
+                    // move cursor back, overwrite with space, move back again
+                    print!("\u{8} \u{8}");
+                    io::stdout().flush()?;
+                }
+            }
+            b if b.is_ascii() && !b.is_ascii_control() => {
+                let c = b as char;
+                user_input.push(c);
+                print!("{c}");
+                io::stdout().flush()?;
+            }
+            _ => {}
+        }
+    }
+
+    Ok(InputResult::Submitted)
+    // _guard drops here → disable_raw_mode() runs automatically,
+    // whether we got here via break, an early `return`, or a `?` propagating an error.
+}
+
+fn command_tokenizer(prompt: &mut &str) -> Vec<String> {
     let mut state: State = State::Outside;
     let mut quote: Quote = Quote::Single;
     // backslash \ is used outside of quotes, it acts as an escape character
@@ -275,12 +352,44 @@ fn command_tokenizer() -> Vec<String> {
 
     let mut user_input = String::new();
 
-    'outer: loop {
-        user_input.clear();
+    // let mut buffer = [0u8; 1];
 
-        io::stdin()
-            .read_line(&mut user_input)
-            .expect("Failed to read line");
+    // io::stdin().read_exact(&mut buffer).unwrap();
+
+    // println!("Received: {:?}", buffer[0]);
+
+    // raw_input(&mut user_input);
+
+    // println!("After program exit: {}", user_input);
+
+    'outer: loop {
+        // raw_input(&mut user_input);
+        // break;
+        // user_input.clear();
+
+        // io::stdin()
+        //     .read_line(&mut user_input)
+        //     .expect("Failed to read line");
+
+        // if user_input.contains('\t') {
+        //     println!("Tab detected");
+        // }
+
+        match raw_input(&mut user_input) {
+            Ok(InputResult::Cancelled) => {
+                args.clear();
+                current_argument.clear();
+                print!("\r\n{}", prompt);
+                io::stdout().flush().unwrap();
+                user_input.clear();
+                continue 'outer;
+            }
+            Ok(InputResult::Submitted) => {}
+            Err(e) => {
+                eprintln!("input error: {e}");
+                break 'outer;
+            }
+        }
 
         for char in user_input.chars() {
             match char {
@@ -384,12 +493,12 @@ fn command_tokenizer() -> Vec<String> {
 }
 
 fn main() {
-    let prompt = "$ ";
+    let mut prompt = "$ ";
     loop {
         print!("{}", prompt);
         io::stdout().flush().unwrap();
 
-        let commands = command_tokenizer();
+        let commands = command_tokenizer(&mut prompt);
 
         let refs: Vec<&str> = commands.iter().map(String::as_str).collect();
 
