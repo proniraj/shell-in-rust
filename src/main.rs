@@ -328,7 +328,9 @@ fn raw_input(user_input: &mut String) -> io::Result<InputResult> {
             3 => return Ok(InputResult::Cancelled),
             9 => command_completation(&mut *user_input),
             13 | 10 => {
-                user_input.push('\n');
+                if !user_input.ends_with('\n') {
+                    user_input.push('\n');
+                }
                 print!("\r\n");
                 io::stdout().flush()?;
                 break;
