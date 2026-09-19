@@ -267,6 +267,21 @@ enum Quote {
     None,
 }
 
+fn command_completation(user_input: &mut String) {
+    let commands = ["echo", "exit"];
+
+    for command in commands {
+        if command.starts_with(user_input.as_str()) {
+            let end_characters = &command[user_input.len()..];
+            print!("{}", end_characters);
+
+            user_input.push_str(end_characters);
+            io::stdout().flush().unwrap();
+            break;
+        }
+    }
+}
+
 /// RAII guard: enables raw mode on creation, disables it on drop.
 /// This runs even on panic (stack unwinding) or early return —
 /// you just can't forget to clean up.
@@ -309,10 +324,7 @@ fn raw_input(user_input: &mut String) -> io::Result<InputResult> {
 
         match buffer[0] {
             3 => return Ok(InputResult::Cancelled),
-            9 => {
-                io::stdout().flush()?;
-                break;
-            }
+            9 => command_completation(&mut *user_input),
             13 => {
                 user_input.push('\n');
                 print!("\r\n");
