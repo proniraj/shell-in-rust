@@ -1,6 +1,6 @@
 use std::env;
 use std::fs::{self, OpenOptions};
-use std::io::{self, BufRead, Read, Write};
+use std::io::{self, IsTerminal, Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
@@ -355,6 +355,19 @@ fn raw_input(user_input: &mut String) -> io::Result<InputResult> {
     // whether we got here via break, an early `return`, or a `?` propagating an error.
 }
 
+fn read_command(user_input: &mut String) -> io::Result<InputResult> {
+    if io::stdin().is_terminal() {
+        raw_input(user_input)
+    } else {
+        user_input.clear();
+        let bytes_read = io::stdin().read_line(user_input)?;
+        if bytes_read == 0 {
+            return Ok(InputResult::Cancelled); // EOF
+        }
+        Ok(InputResult::Submitted)
+    }
+}
+
 fn command_tokenizer(prompt: &mut &str) -> Vec<String> {
     let mut state: State = State::Outside;
     let mut quote: Quote = Quote::Single;
@@ -366,30 +379,8 @@ fn command_tokenizer(prompt: &mut &str) -> Vec<String> {
 
     let mut user_input = String::new();
 
-    // let mut buffer = [0u8; 1];
-
-    // io::stdin().read_exact(&mut buffer).unwrap();
-
-    // println!("Received: {:?}", buffer[0]);
-
-    // raw_input(&mut user_input);
-
-    // println!("After program exit: {}", user_input);
-
     'outer: loop {
-        // raw_input(&mut user_input);
-        // break;
-        // user_input.clear();
-
-        // io::stdin()
-        //     .read_line(&mut user_input)
-        //     .expect("Failed to read line");
-
-        // if user_input.contains('\t') {
-        //     println!("Tab detected");
-        // }
-
-        match raw_input(&mut user_input) {
+        match read_command(&mut user_input) {
             Ok(InputResult::Cancelled) => {
                 args.clear();
                 current_argument.clear();
