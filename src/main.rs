@@ -193,6 +193,7 @@ fn run_external_command(command_with_args: &[&str]) {
                                     if !output.stdout.ends_with(b"\n") {
                                         print!("\n");
                                     }
+                                    io::stdout().flush().unwrap();
                                 }
                             }
                         }
@@ -209,6 +210,7 @@ fn run_external_command(command_with_args: &[&str]) {
                                     if !output.stderr.ends_with(b"\n") {
                                         print!("\n");
                                     }
+                                    io::stdout().flush().unwrap();
                                 }
                             }
                         }
