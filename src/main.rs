@@ -189,7 +189,6 @@ fn run_external_command(command_with_args: &[&str]) {
                                 }
                                 None => {
                                     io::stdout().write_all(&output.stdout).unwrap();
-
                                     if !output.stdout.ends_with(b"\n") {
                                         print!("\n");
                                     }
@@ -206,11 +205,10 @@ fn run_external_command(command_with_args: &[&str]) {
                                 }
                                 None => {
                                     io::stderr().write_all(&output.stderr).unwrap();
-
                                     if !output.stderr.ends_with(b"\n") {
-                                        print!("\n");
+                                        eprint!("\n");
                                     }
-                                    io::stdout().flush().unwrap();
+                                    io::stderr().flush().unwrap();
                                 }
                             }
                         }
