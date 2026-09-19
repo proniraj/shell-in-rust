@@ -273,9 +273,11 @@ fn command_completation(user_input: &mut String) {
     for command in commands {
         if command.starts_with(user_input.as_str()) {
             let end_characters = &command[user_input.len()..];
-            print!("{}", end_characters);
+            print!("{} ", end_characters);
 
             user_input.push_str(end_characters);
+            user_input.push(' ');
+
             io::stdout().flush().unwrap();
             break;
         }
