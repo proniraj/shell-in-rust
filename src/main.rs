@@ -357,8 +357,10 @@ fn raw_input(user_input: &mut String) -> io::Result<InputResult> {
 
 fn read_command(user_input: &mut String) -> io::Result<InputResult> {
     if io::stdin().is_terminal() {
+        println!("Terminal mode:");
         raw_input(user_input)
     } else {
+        println!("Raw mode");
         user_input.clear();
         let bytes_read = io::stdin().read_line(user_input)?;
         if bytes_read == 0 {
