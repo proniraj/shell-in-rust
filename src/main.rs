@@ -368,7 +368,7 @@ fn read_command(user_input: &mut String) -> io::Result<InputResult> {
     }
 }
 
-fn command_tokenizer(prompt: &mut &str) -> Vec<String> {
+fn command_tokenizer(prompt: &str) -> Vec<String> {
     let mut state: State = State::Outside;
     let mut quote: Quote = Quote::Single;
     // backslash \ is used outside of quotes, it acts as an escape character
@@ -498,12 +498,12 @@ fn command_tokenizer(prompt: &mut &str) -> Vec<String> {
 }
 
 fn main() {
-    let mut prompt = "$ ";
+    let prompt = "$ ";
     loop {
         print!("{}", prompt);
         io::stdout().flush().unwrap();
 
-        let commands = command_tokenizer(&mut prompt);
+        let commands = command_tokenizer(prompt);
 
         let refs: Vec<&str> = commands.iter().map(String::as_str).collect();
 
